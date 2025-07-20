@@ -1,0 +1,79 @@
+{
+  "name": "chatui",
+  "version": "1.0.4",
+  "description": "A beautiful and simple chat interface that supports multiple AI providers including OpenAI, Anthropic, and Ollama.",
+  "main": "main.js",
+  "scripts": {
+    "start": "./start.sh",
+    "dev": "./start.sh",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "electron": "electron .",
+    "electron-dev": "NODE_ENV=development electron .",
+    "build": "cd frontend && npm run build",
+    "electron-pack": "npm run build && electron-builder",
+    "dist": "npm run build && electron-builder --publish=never",
+    "dist-all": "npm run build && electron-builder --publish=never --win --mac --linux"
+  },
+  "keywords": [
+    "chat",
+    "ai",
+    "openai",
+    "anthropic",
+    "ollama",
+    "react",
+    "nodejs",
+    "sqlite"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.3",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.chatui.app",
+    "productName": "ChatUI",
+    "directories": {
+      "output": "dist"
+    },
+    "icon": "assets/icon.svg",
+    "files": [
+      "main.js",
+      "preload.js",
+      "backend/**/*",
+      "frontend/dist/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "backend/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/node_modules",
+        "to": "backend/node_modules"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
