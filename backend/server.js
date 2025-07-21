@@ -92,41 +92,62 @@ app.put('/api/conversations/:id', (req, res) => {
   const { id } = req.params;
   const { title, provider, model } = req.body;
   
-  const stmt = db.prepare('UPDATE conversations SET title = ?, provider = ?, model = ? WHERE id = ?');
-  const result = stmt.run(title, provider, model, id);
-  stmt.finalize();
-  
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Conversation not found' });
-  }
-  
-  res.json({ message: 'Conversation updated successfully' });
+  db.run('UPDATE conversations SET title = ?, provider = ?, model = ? WHERE id = ?', 
+    [title, provider, model, id], function(err) {
+    if (err) {
+      console.error('Error updating conversation:', err);
+      return res.status(500).json({ error: 'Failed to update conversation' });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    
+    res.json({ message: 'Conversation updated successfully' });
+  });
 });
 
 // Delete conversation
 app.delete('/api/conversations/:id', (req, res) => {
   const { id } = req.params;
   
-  try {
+  // Use a transaction to ensure both operations succeed or fail together
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    
     // First delete all messages in the conversation
-    const deleteMessagesStmt = db.prepare('DELETE FROM messages WHERE conversation_id = ?');
-    deleteMessagesStmt.run(id);
-    deleteMessagesStmt.finalize();
-    
-    // Then delete the conversation
-    const deleteConversationStmt = db.prepare('DELETE FROM conversations WHERE id = ?');
-    const result = deleteConversationStmt.run(id);
-    deleteConversationStmt.finalize();
-    
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Conversation not found' });
-    }
-    
-    res.json({ message: 'Conversation deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting conversation:', error);
-    res.status(500).json({ error: 'Failed to delete conversation' });
-  }
+    db.run('DELETE FROM messages WHERE conversation_id = ?', [id], function(err) {
+      if (err) {
+        console.error('Error deleting messages:', err);
+        db.run('ROLLBACK');
+        return res.status(500).json({ error: 'Failed to delete conversation messages' });
+      }
+      
+      // Then delete the conversation
+      db.run('DELETE FROM conversations WHERE id = ?', [id], function(err) {
+        if (err) {
+          console.error('Error deleting conversation:', err);
+          db.run('ROLLBACK');
+          return res.status(500).json({ error: 'Failed to delete conversation' });
+        }
+        
+        if (this.changes === 0) {
+          db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Conversation not found' });
+        }
+        
+        // Commit the transaction
+        db.run('COMMIT', function(err) {
+          if (err) {
+            console.error('Error committing transaction:', err);
+            return res.status(500).json({ error: 'Failed to commit deletion' });
+          }
+          
+          res.json({ message: 'Conversation deleted successfully' });
+        });
+      });
+    });
+  });
 });
 
 // Get messages for a conversation
