@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, Settings, MessageSquare, Edit2, Check, X, Moon, Sun, Trash2 } from 'lucide-react';
 import './Sidebar.css';
 
-function Sidebar({ conversations, activeConversation, onSelectConversation, onNewConversation, onUpdateConversation, onDeleteConversation, onShowSettings, isDarkMode, onToggleDarkMode }) {
+function Sidebar({ conversations, activeConversation, onSelectConversation, onNewConversation, onUpdateConversation, onDeleteConversation, onDeleteAllConversations, onShowSettings, isDarkMode, onToggleDarkMode }) {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
 
@@ -48,6 +48,17 @@ function Sidebar({ conversations, activeConversation, onSelectConversation, onNe
     }
   };
 
+  const handleDeleteAll = () => {
+    if (conversations.length === 0) {
+      return;
+    }
+    
+    const confirmMessage = `Are you sure you want to delete ALL ${conversations.length} conversation${conversations.length === 1 ? '' : 's'}? This action cannot be undone.`;
+    if (window.confirm(confirmMessage)) {
+      onDeleteAllConversations();
+    }
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -55,6 +66,12 @@ function Sidebar({ conversations, activeConversation, onSelectConversation, onNe
           <Plus size={20} />
           New Chat
         </button>
+        {conversations.length > 0 && (
+          <button className="delete-all-btn" onClick={handleDeleteAll} title="Delete all conversations">
+            <Trash2 size={16} />
+            Delete All
+          </button>
+        )}
       </div>
       
       <div className="conversations-list">

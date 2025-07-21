@@ -117,7 +117,8 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete conversation');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete conversation');
       }
 
       // Remove from local state
@@ -132,6 +133,28 @@ function App() {
       }
     } catch (error) {
       console.error('Error deleting conversation:', error);
+      alert(`Failed to delete conversation: ${error.message}`);
+    }
+  };
+
+  const deleteAllConversations = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/conversations', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete all conversations');
+      }
+
+      // Clear all local state
+      setConversations([]);
+      setActiveConversation(null);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error deleting all conversations:', error);
+      alert(`Failed to delete all conversations: ${error.message}`);
     }
   };
 
@@ -248,6 +271,7 @@ function App() {
         onNewConversation={createNewConversation}
         onUpdateConversation={updateConversation}
         onDeleteConversation={deleteConversation}
+        onDeleteAllConversations={deleteAllConversations}
         onShowSettings={() => setShowSettings(true)}
         isDarkMode={isDarkMode}
         onToggleDarkMode={toggleDarkMode}

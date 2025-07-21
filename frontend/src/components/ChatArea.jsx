@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Settings } from 'lucide-react';
+import { Send, Settings, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -9,6 +9,7 @@ function ChatArea({ messages, onSendMessage, activeConversation, onUpdateConvers
   const [inputValue, setInputValue] = useState('');
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
   const modelSelectorRef = useRef(null);
 
   useEffect(() => {
@@ -106,6 +107,19 @@ function ChatArea({ messages, onSendMessage, activeConversation, onUpdateConvers
     });
   };
 
+  const handleCopyMessage = async (messageId, content) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(messageId);
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedMessageId(null);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   if (!activeConversation) {
     return (
       <div className="chat-area">
@@ -180,16 +194,31 @@ function ChatArea({ messages, onSendMessage, activeConversation, onUpdateConvers
         )}
         {messages.map((message) => (
           <div key={message.id} className={`message ${message.role}`}>
-            <div className="message-content">
-              {message.role === 'assistant' ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeHighlight]}
+            <div className="message-wrapper">
+              <div className="message-content">
+                {message.role === 'assistant' ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeHighlight]}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                ) : (
+                  message.content
+                )}
+              </div>
+              {message.role === 'assistant' && (
+                <button
+                  className="copy-button"
+                  onClick={() => handleCopyMessage(message.id, message.content)}
+                  title="Copy message"
                 >
-                  {message.content}
-                </ReactMarkdown>
-              ) : (
-                message.content
+                  {copiedMessageId === message.id ? (
+                    <Check size={14} />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
               )}
             </div>
             <div className="message-timestamp">

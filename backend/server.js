@@ -123,7 +123,7 @@ app.delete('/api/conversations/:id', (req, res) => {
         return res.status(500).json({ error: 'Failed to delete conversation messages' });
       }
       
-      // Then delete the conversation
+      // Then delete the conversation - capture changes in the correct context
       db.run('DELETE FROM conversations WHERE id = ?', [id], function(err) {
         if (err) {
           console.error('Error deleting conversation:', err);
@@ -131,7 +131,12 @@ app.delete('/api/conversations/:id', (req, res) => {
           return res.status(500).json({ error: 'Failed to delete conversation' });
         }
         
-        if (this.changes === 0) {
+        // Capture the changes value in the correct context
+        const conversationChanges = this.changes;
+        console.log('Conversation deletion changes:', conversationChanges);
+        
+        if (conversationChanges === 0) {
+          console.log('No conversation found with ID:', id);
           db.run('ROLLBACK');
           return res.status(404).json({ error: 'Conversation not found' });
         }
@@ -143,7 +148,56 @@ app.delete('/api/conversations/:id', (req, res) => {
             return res.status(500).json({ error: 'Failed to commit deletion' });
           }
           
+          console.log('Successfully deleted conversation:', id);
           res.json({ message: 'Conversation deleted successfully' });
+        });
+      });
+    });
+  });
+});
+
+// Delete all conversations
+app.delete('/api/conversations', (req, res) => {
+  // Use a transaction to ensure both operations succeed or fail together
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    
+    // First delete all messages
+    db.run('DELETE FROM messages', function(err) {
+      if (err) {
+        console.error('Error deleting all messages:', err);
+        db.run('ROLLBACK');
+        return res.status(500).json({ error: 'Failed to delete all messages' });
+      }
+      
+      const messagesDeleted = this.changes;
+      console.log('Messages deleted:', messagesDeleted);
+      
+      // Then delete all conversations
+      db.run('DELETE FROM conversations', function(err) {
+        if (err) {
+          console.error('Error deleting all conversations:', err);
+          db.run('ROLLBACK');
+          return res.status(500).json({ error: 'Failed to delete all conversations' });
+        }
+        
+        // Capture the changes value in the correct context
+        const conversationsDeleted = this.changes;
+        console.log('Conversations deleted:', conversationsDeleted);
+        
+        // Commit the transaction
+        db.run('COMMIT', function(err) {
+          if (err) {
+            console.error('Error committing transaction:', err);
+            return res.status(500).json({ error: 'Failed to commit deletion' });
+          }
+          
+          console.log('Successfully deleted all conversations');
+          res.json({ 
+            message: 'All conversations deleted successfully',
+            deletedConversations: conversationsDeleted,
+            deletedMessages: messagesDeleted
+          });
         });
       });
     });
