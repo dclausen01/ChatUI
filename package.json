@@ -1,6 +1,6 @@
 {
   "name": "chatui",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A beautiful and simple chat interface that supports multiple AI providers including OpenAI, Anthropic, and Ollama.",
   "main": "main.js",
   "scripts": {
