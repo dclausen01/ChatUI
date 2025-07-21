@@ -98,27 +98,47 @@
   color: #495057;
 }
 
-.edit-btn {
+.conversation-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.conversation-item:hover .conversation-actions {
+  opacity: 1;
+}
+
+.edit-btn,
+.delete-btn {
   background: none;
   border: none;
   color: inherit;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.conversation-item:hover .edit-btn {
-  opacity: 1;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
 .conversation-item.active .edit-btn:hover {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+.conversation-item.active .delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.3);
+  color: #ff6b7a;
 }
 
 .edit-container {
@@ -228,4 +248,14 @@ body.dark-mode .edit-input {
 
 body.dark-mode .edit-input:focus {
   border-color: #777;
+}
+
+body.dark-mode .delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.3);
+  color: #ff6b7a;
+}
+
+body.dark-mode .conversation-item.active .delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.4);
+  color: #ff8a95;
 }

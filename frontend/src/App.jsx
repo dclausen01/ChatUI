@@ -110,6 +110,31 @@ function App() {
     }
   };
 
+  const deleteConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/conversations/${conversationId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete conversation');
+      }
+
+      // Remove from local state
+      setConversations(prevConversations => 
+        prevConversations.filter(conv => conv.id !== conversationId)
+      );
+
+      // If the deleted conversation was active, clear the active conversation and messages
+      if (activeConversation?.id === conversationId) {
+        setActiveConversation(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+    }
+  };
+
   const sendMessage = async (content, setIsLoading) => {
     if (!activeConversation) return;
 
@@ -222,6 +247,7 @@ function App() {
         onSelectConversation={setActiveConversation}
         onNewConversation={createNewConversation}
         onUpdateConversation={updateConversation}
+        onDeleteConversation={deleteConversation}
         onShowSettings={() => setShowSettings(true)}
         isDarkMode={isDarkMode}
         onToggleDarkMode={toggleDarkMode}

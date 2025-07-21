@@ -89,17 +89,44 @@ app.post('/api/conversations', (req, res) => {
 
 // Update conversation
 app.put('/api/conversations/:id', (req, res) => {
-  const conversationId = req.params.id;
+  const { id } = req.params;
   const { title, provider, model } = req.body;
   
-  db.run('UPDATE conversations SET title = ?, provider = ?, model = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
-    [title, provider, model, conversationId], function(err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+  const stmt = db.prepare('UPDATE conversations SET title = ?, provider = ?, model = ? WHERE id = ?');
+  const result = stmt.run(title, provider, model, id);
+  stmt.finalize();
+  
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'Conversation not found' });
+  }
+  
+  res.json({ message: 'Conversation updated successfully' });
+});
+
+// Delete conversation
+app.delete('/api/conversations/:id', (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // First delete all messages in the conversation
+    const deleteMessagesStmt = db.prepare('DELETE FROM messages WHERE conversation_id = ?');
+    deleteMessagesStmt.run(id);
+    deleteMessagesStmt.finalize();
+    
+    // Then delete the conversation
+    const deleteConversationStmt = db.prepare('DELETE FROM conversations WHERE id = ?');
+    const result = deleteConversationStmt.run(id);
+    deleteConversationStmt.finalize();
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Conversation not found' });
     }
-    res.json({ message: 'Conversation updated successfully' });
-  });
+    
+    res.json({ message: 'Conversation deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ error: 'Failed to delete conversation' });
+  }
 });
 
 // Get messages for a conversation

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Plus, Settings, MessageSquare, Edit2, Check, X, Moon, Sun } from 'lucide-react';
+import { Plus, Settings, MessageSquare, Edit2, Check, X, Moon, Sun, Trash2 } from 'lucide-react';
 import './Sidebar.css';
 
-function Sidebar({ conversations, activeConversation, onSelectConversation, onNewConversation, onUpdateConversation, onShowSettings, isDarkMode, onToggleDarkMode }) {
+function Sidebar({ conversations, activeConversation, onSelectConversation, onNewConversation, onUpdateConversation, onDeleteConversation, onShowSettings, isDarkMode, onToggleDarkMode }) {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
 
@@ -38,6 +38,13 @@ function Sidebar({ conversations, activeConversation, onSelectConversation, onNe
       saveEdit(conversationId, e);
     } else if (e.key === 'Escape') {
       cancelEdit(e);
+    }
+  };
+
+  const handleDelete = (conversationId, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      onDeleteConversation(conversationId);
     }
   };
 
@@ -87,12 +94,22 @@ function Sidebar({ conversations, activeConversation, onSelectConversation, onNe
             ) : (
               <>
                 <span className="conversation-title">{conversation.title}</span>
-                <button
-                  className="edit-btn"
-                  onClick={(e) => startEditing(conversation, e)}
-                >
-                  <Edit2 size={14} />
-                </button>
+                <div className="conversation-actions">
+                  <button
+                    className="edit-btn"
+                    onClick={(e) => startEditing(conversation, e)}
+                    title="Edit conversation"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => handleDelete(conversation.id, e)}
+                    title="Delete conversation"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </>
             )}
           </div>
