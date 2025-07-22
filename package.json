@@ -30,7 +30,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/dclausen01/ChatUI.git"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -47,7 +47,6 @@
     "directories": {
       "output": "dist"
     },
-    "icon": "assets/icon.svg",
     "files": [
       "main.js",
       "preload.js",
