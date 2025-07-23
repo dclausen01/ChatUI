@@ -46,7 +46,7 @@
     "appId": "com.chatui.app",
     "productName": "ChatUI",
     "directories": {
-      "output": "dist"
+      "output": "dist-build"
     },
     "icon": "assets/icon.png",
     "files": [
