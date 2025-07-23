@@ -3,10 +3,37 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
 const path = require('path');
+const CryptoJS = require('crypto-js');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Encryption configuration
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
+
+// Encryption/Decryption functions
+function encryptApiKey(apiKey) {
+  if (!apiKey || apiKey.trim() === '') return '';
+  try {
+    return CryptoJS.AES.encrypt(apiKey, ENCRYPTION_KEY).toString();
+  } catch (error) {
+    console.error('Error encrypting API key:', error);
+    return apiKey; // Return original if encryption fails
+  }
+}
+
+function decryptApiKey(encryptedApiKey) {
+  if (!encryptedApiKey || encryptedApiKey.trim() === '') return '';
+  try {
+    const bytes = CryptoJS.AES.decrypt(encryptedApiKey, ENCRYPTION_KEY);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return decrypted || encryptedApiKey; // Return original if decryption fails
+  } catch (error) {
+    console.error('Error decrypting API key:', error);
+    return encryptedApiKey; // Return original if decryption fails
+  }
+}
 
 // Middleware
 app.use(cors());
@@ -248,6 +275,14 @@ app.post('/api/chat', async (req, res) => {
       });
     });
 
+    // Decrypt API keys before using them
+    if (settings.openai_api_key) {
+      settings.openai_api_key = decryptApiKey(settings.openai_api_key);
+    }
+    if (settings.anthropic_api_key) {
+      settings.anthropic_api_key = decryptApiKey(settings.anthropic_api_key);
+    }
+
     let response;
     
     switch (provider) {
@@ -278,6 +313,13 @@ app.get('/api/settings', (req, res) => {
       res.status(500).json({ error: err.message });
       return;
     }
+    
+    if (row) {
+      // Decrypt API keys before sending to frontend
+      row.openai_api_key = decryptApiKey(row.openai_api_key);
+      row.anthropic_api_key = decryptApiKey(row.anthropic_api_key);
+    }
+    
     res.json(row || {});
   });
 });
@@ -285,9 +327,13 @@ app.get('/api/settings', (req, res) => {
 app.post('/api/settings', (req, res) => {
   const { openai_api_key, anthropic_api_key, ollama_base_url, default_provider, default_model } = req.body;
   
+  // Encrypt API keys before storing in database
+  const encryptedOpenAIKey = encryptApiKey(openai_api_key);
+  const encryptedAnthropicKey = encryptApiKey(anthropic_api_key);
+  
   db.run(`INSERT OR REPLACE INTO settings (id, openai_api_key, anthropic_api_key, ollama_base_url, default_provider, default_model) 
           VALUES (1, ?, ?, ?, ?, ?)`, 
-    [openai_api_key, anthropic_api_key, ollama_base_url, default_provider, default_model], 
+    [encryptedOpenAIKey, encryptedAnthropicKey, ollama_base_url, default_provider, default_model], 
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -309,6 +355,14 @@ app.get('/api/models/:provider', async (req, res) => {
         else resolve(row || {});
       });
     });
+
+    // Decrypt API keys before using them
+    if (settings.openai_api_key) {
+      settings.openai_api_key = decryptApiKey(settings.openai_api_key);
+    }
+    if (settings.anthropic_api_key) {
+      settings.anthropic_api_key = decryptApiKey(settings.anthropic_api_key);
+    }
 
     let models = [];
     
